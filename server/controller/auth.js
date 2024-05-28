@@ -23,13 +23,22 @@ const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = generateOTP();
 
-    const newUser = await User.create({ username, password: hashedPassword });
+    const newUser = await User.create({
+      username,
+      password: hashedPassword,
+      emailVerificationOTP: otp,
+    });
     // Remove the password field from the response
     const { password: _, ...userWithoutPassword } = newUser.toJSON();
 
+    const message = `Your OTP for email verification is ${otp}`;
+    await sendEmail(username, "Email Verification", message);
+
     res.status(201).json({
-      message: "User registered successfully",
+      message:
+        "User registered successfully. Please check your email for the verification code.",
       user: userWithoutPassword,
     });
   } catch (err) {
@@ -42,7 +51,7 @@ const register = async (req, res) => {
 const verifyEmail = async (req, res) => {
   const { email, otp } = req.body;
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { username: email } });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -54,6 +63,7 @@ const verifyEmail = async (req, res) => {
     }
 
     user.isVerified = true;
+    user.emailVerificationOTP = null;
     await user.save();
 
     res.status(200).json({ message: "Email verified successfully" });
@@ -67,7 +77,7 @@ const verifyEmail = async (req, res) => {
 const resendVerificationOTP = async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { username: email } });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -77,7 +87,7 @@ const resendVerificationOTP = async (req, res) => {
     await user.save();
 
     const message = `Your OTP for email verification is ${otp}`;
-    await sendEmail(user.email, "Email Verification", message);
+    await sendEmail(user.username, "Email Verification", message);
 
     res.status(200).json({ message: "OTP resent successfully" });
   } catch (error) {

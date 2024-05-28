@@ -9,10 +9,12 @@ const {
   resetPassword,
 } = require("../controller/auth.js");
 
+const emailIsVerified = require("../middleware/emailIsVerifed.js");
+
 const router = express.Router();
 
 router.post("/register", register);
-router.post("/login", login);
+router.post("/login", emailIsVerified, login);
 router.post("/logout", logout);
 router.post("/forgotpassword", forgotPassword);
 router.post("/resetpassword/:resetToken", resetPassword);

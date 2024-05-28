@@ -4,7 +4,7 @@ const generateOTP = () => {
   return speakeasy.totp({
     secret: process.env.OTP_SECRET,
     encoding: "base32",
-    step: 300, // OTP valid for 5 minutes
+    step: 600, // OTP valid for 5 minutes
   });
 };
 
@@ -13,7 +13,7 @@ const verifyOTP = (token) => {
     secret: process.env.OTP_SECRET,
     encoding: "base32",
     token,
-    step: 300,
+    step: 600,
     window: 1,
   });
 };
