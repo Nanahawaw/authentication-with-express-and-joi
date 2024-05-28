@@ -2,6 +2,9 @@ const { User } = require("../models");
 const userSchema = require("../validation.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 //register
 const register = async (req, res) => {
@@ -61,7 +64,7 @@ const login = async (req, res) => {
 
     res.status(200).json({ token });
   } catch (error) {
-    console.error(err);
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
