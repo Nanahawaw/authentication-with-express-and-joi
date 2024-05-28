@@ -1,4 +1,4 @@
-import Joi from "joi";
+const Joi = require("joi");
 
 const userSchema = Joi.object({
   username: Joi.string().email().required().messages({
@@ -17,4 +17,4 @@ const userSchema = Joi.object({
         "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character",
     }),
 });
-export default userSchema;
+module.exports = userSchema;

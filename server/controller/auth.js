@@ -1,9 +1,9 @@
-import User from "../models/User.js";
-import userSchema from "../validation.js";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+const User = require("../models/User.js");
+const userSchema = require("../validation.js");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-export const register = async (req, res) => {
+const register = async (req, res) => {
   const { error } = userSchema.validate(req.body);
 
   if (error) {
@@ -31,3 +31,5 @@ export const register = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+module.exports = register;
