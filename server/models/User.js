@@ -1,3 +1,11 @@
-import { sequelize, DataTypes } from 'sequelize';
+import { sequelize, DataTypes } from "sequelize";
 
-const Users = sequelize.define("Users")
+const User = sequelize.define("User", {
+  username: {
+    type: DataTypes.STRING,
+  },
+  password: {
+    type: DataTypes.STRING,
+  },
+});
+export default User;
