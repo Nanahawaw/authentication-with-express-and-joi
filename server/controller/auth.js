@@ -3,7 +3,9 @@ const userSchema = require("../validation.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
-const { generateOTP, verifyOTP } = require("../utils/generateOtp");
+const speakeasy = require("speakeasy");
+const { generateOTP } = require("../utils/generateOtp");
+const { Op } = require("sequelize");
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -16,6 +18,7 @@ const register = async (req, res) => {
     return res.status(400).json({ error: error.details[0].message });
   }
   const { username, password } = req.body;
+  const { otp, secret } = generateOTP();
   try {
     const existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
@@ -23,12 +26,11 @@ const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const otp = generateOTP();
 
     const newUser = await User.create({
       username,
       password: hashedPassword,
-      emailVerificationOTP: otp,
+      otpSecret: secret,
     });
     // Remove the password field from the response
     const { password: _, ...userWithoutPassword } = newUser.toJSON();
@@ -55,15 +57,19 @@ const verifyEmail = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    const isValid = verifyOTP(otp);
+    //verify the otp
+    const isValid = speakeasy.totp.verify({
+      secret: user.otpSecret,
+      encoding: "base32",
+      token: otp,
+      window: 10, // 10-second clock drift window
+    });
 
     if (!isValid) {
       return res.status(400).json({ error: "Invalid OTP" });
     }
 
     user.isVerified = true;
-    user.emailVerificationOTP = null;
     await user.save();
 
     res.status(200).json({ message: "Email verified successfully" });
@@ -76,18 +82,22 @@ const verifyEmail = async (req, res) => {
 //resend verification otp
 const resendVerificationOTP = async (req, res) => {
   const { email } = req.body;
+
   try {
     const user = await User.findOne({ where: { username: email } });
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const otp = generateOTP();
-    user.emailVerificationOTP = otp;
+    const { otp, secret } = generateOTP();
+
+    // Update the user's otpSecret
+    await user.update({ otpSecret: secret });
     await user.save();
 
     const message = `Your OTP for email verification is ${otp}`;
-    await sendEmail(user.username, "Email Verification", message);
+    await sendEmail(email, "Email Verification", message);
 
     res.status(200).json({ message: "OTP resent successfully" });
   } catch (error) {
@@ -144,14 +154,19 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const otp = generateOTP();
-    user.passwordResetOTP = otp;
-    await user.save();
+    const { otp, secret } = generateOTP();
 
-    const message = `Your OTP for password reset is ${otp}`;
-    await sendEmail(user.username, "Password Reset", message);
+    await user.update({ otpSecret: secret });
 
-    res.status(200).json({ message: "Password reset OTP sent to email" });
+    const subject = "Reset Password";
+    const message = `You are receiving this because you (or someone else) have requested the reset of your password.\n\n
+             Please use the following code to reset your password:\n\n
+             ${otp}\n\n
+             If you did not request this, please ignore this email and your password will remain unchanged.`;
+
+    await sendEmail(email, subject, message);
+
+    res.status(200).json({ message: "Password reset email sent" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Could not send password reset OTP" });
@@ -159,26 +174,40 @@ const forgotPassword = async (req, res) => {
 };
 //reset password
 const resetPassword = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
+  const { otp, password, email } = req.body;
+
   try {
-    const user = await User.findOne({ where: { username: email } });
+    const user = await User.findOne({
+      where: {
+        username: email,
+        otpSecret: {
+          [Op.not]: null, // Use the Op.not operator instead of $ne
+        },
+      },
+    });
+
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(400).json({ error: "Invalid request" });
     }
 
-    if (user.passwordResetOTP !== otp) {
-      return res.status(400).json({ error: "Invalid OTP" });
+    const isTokenValid = speakeasy.totp.verify({
+      secret: user.otpSecret,
+      encoding: "base32",
+      token: otp,
+      window: 10, // 10-second clock drift window,
+    });
+
+    if (!isTokenValid) {
+      return res.status(400).json({ error: "Invalid or expired token" });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.passwordResetOTP = null; // Clear the OTP after password reset
-    await user.save();
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await user.update({ password: hashedPassword, otpSecret: null });
 
-    res.status(200).json({ message: "Password reset successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Password reset failed" });
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 

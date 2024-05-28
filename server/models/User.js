@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     password: {
       type: DataTypes.STRING,
     },
-    emailVerificationOTP: {
+    otpSecret: {
       type: DataTypes.STRING,
     },
     isVerified: {

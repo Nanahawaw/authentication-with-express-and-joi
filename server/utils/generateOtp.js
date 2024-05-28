@@ -1,21 +1,15 @@
 const speakeasy = require("speakeasy");
 
 const generateOTP = () => {
-  return speakeasy.totp({
-    secret: process.env.OTP_SECRET,
-    encoding: "base32",
-    step: 600, // OTP valid for 5 minutes
+  const secret = speakeasy.generateSecret({
+    length: 20,
+    otpauth_opts: { encoding: "base32" },
   });
+  const otp = speakeasy.totp({
+    secret: secret.base32,
+    encoding: "base32",
+  });
+  return { otp, secret: secret.base32 };
 };
 
-const verifyOTP = (token) => {
-  return speakeasy.totp.verify({
-    secret: process.env.OTP_SECRET,
-    encoding: "base32",
-    token,
-    step: 600,
-    window: 1,
-  });
-};
-
-module.exports = { generateOTP, verifyOTP };
+module.exports = { generateOTP };
