@@ -139,42 +139,40 @@ const logout = (req, res) => {
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { username: email } });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const resetToken = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: "10m",
-    });
-    const resetUrl = `${req.protocol}://${req.get(
-      "host"
-    )}/api/auth/resetpassword/${resetToken}`;
+    const otp = generateOTP();
+    user.passwordResetOTP = otp;
+    await user.save();
 
-    const message = `You requested a password reset. Please go to this link to reset your password: ${resetUrl}`;
+    const message = `Your OTP for password reset is ${otp}`;
+    await sendEmail(user.username, "Password Reset", message);
 
-    await sendEmail(user.email, "Password Reset Request", message);
-
-    res.status(200).json({ message: "Email sent" });
+    res.status(200).json({ message: "Password reset OTP sent to email" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Email could not be sent" });
+    res.status(500).json({ error: "Could not send password reset OTP" });
   }
 };
-
+//reset password
 const resetPassword = async (req, res) => {
-  const { resetToken } = req.params;
-  const { password } = req.body;
-
+  const { email, otp, newPassword } = req.body;
   try {
-    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
-    const user = await User.findOne({ where: { email: decoded.email } });
-
+    const user = await User.findOne({ where: { username: email } });
     if (!user) {
-      return res.status(400).json({ error: "Invalid token" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    user.password = await bcrypt.hash(password, 10);
+    if (user.passwordResetOTP !== otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.passwordResetOTP = null; // Clear the OTP after password reset
     await user.save();
 
     res.status(200).json({ message: "Password reset successfully" });
