@@ -60,10 +60,17 @@ const login = async (req, res) => {
     });
 
     res.status(200).json({ token });
-  } catch (err) {
+  } catch (error) {
     console.error(err);
     res.status(500).json({ error: error.message });
   }
 };
 
-module.exports = { register, login };
+//logout
+
+const logout = (req, res) => {
+  res.clearCookie("accessToken");
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
+module.exports = { register, login, logout };
