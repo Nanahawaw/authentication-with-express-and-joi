@@ -149,11 +149,12 @@ const logout = (req, res) => {
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ where: { username: email } });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
+<<<<<<< HEAD
     const { otp, secret } = generateOTP();
 
     await user.update({ otpSecret: secret });
@@ -167,12 +168,26 @@ const forgotPassword = async (req, res) => {
     await sendEmail(email, subject, message);
 
     res.status(200).json({ message: "Password reset email sent" });
+=======
+    const resetToken = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: "10m",
+    });
+    const resetUrl = `${req.protocol}://${req.get(
+      "host"
+    )}/api/auth/resetpassword/${resetToken}`;
+
+    const message = `You requested a password reset. Please go to this link to reset your password: ${resetUrl}`;
+
+    await sendEmail(user.email, "Password Reset Request", message);
+
+    res.status(200).json({ message: "Email sent" });
+>>>>>>> parent of 66fd711 (forget and reset password)
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Could not send password reset OTP" });
+    res.status(500).json({ error: "Email could not be sent" });
   }
 };
-//reset password
+
 const resetPassword = async (req, res) => {
   const { otp, password, email } = req.body;
 
