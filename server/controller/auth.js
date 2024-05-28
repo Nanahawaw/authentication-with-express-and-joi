@@ -3,6 +3,7 @@ const userSchema = require("../validation.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+//register
 const register = async (req, res) => {
   const { error } = userSchema.validate(req.body);
 
@@ -32,8 +33,37 @@ const register = async (req, res) => {
   }
 };
 
+//login
 const login = async (req, res) => {
   const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ where: { username } });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    //store in cookies
+    res.cookie("accessToken", token, {
+      httpOnly: true,
+      maxAge: 3600000,
+    });
+
+    res.status(200).json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: error.message });
+  }
 };
 
 module.exports = { register, login };
