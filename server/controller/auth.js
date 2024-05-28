@@ -154,7 +154,6 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-<<<<<<< HEAD
     const { otp, secret } = generateOTP();
 
     await user.update({ otpSecret: secret });
@@ -168,20 +167,6 @@ const forgotPassword = async (req, res) => {
     await sendEmail(email, subject, message);
 
     res.status(200).json({ message: "Password reset email sent" });
-=======
-    const resetToken = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: "10m",
-    });
-    const resetUrl = `${req.protocol}://${req.get(
-      "host"
-    )}/api/auth/resetpassword/${resetToken}`;
-
-    const message = `You requested a password reset. Please go to this link to reset your password: ${resetUrl}`;
-
-    await sendEmail(user.email, "Password Reset Request", message);
-
-    res.status(200).json({ message: "Email sent" });
->>>>>>> parent of 66fd711 (forget and reset password)
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Email could not be sent" });
