@@ -14,17 +14,10 @@
     "dialect": "mysql"
   },
   "production": {
-<<<<<<< HEAD
-    "username": "uuf6ybyh0u48rgfb",
-    "password": "sW6MVnZDCRZNQeVpAwP3",
-    "database": "bjjmlaokgvc9pmvn1crq",
-    "host": "bjjmlaokgvc9pmvn1crq-mysql.services.clever-cloud.com",
-=======
     "username": "root",
     "password": null,
     "database": "database_production",
     "host": "127.0.0.1",
->>>>>>> parent of 6d8c47e (config)
     "dialect": "mysql"
   }
 }
