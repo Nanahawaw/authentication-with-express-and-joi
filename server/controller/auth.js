@@ -1,4 +1,4 @@
-const User = require("../models/User.js");
+const { User } = require("../models");
 const userSchema = require("../validation.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -32,4 +32,8 @@ const register = async (req, res) => {
   }
 };
 
-module.exports = register;
+const login = async (req, res) => {
+  const { username, password } = req.body;
+};
+
+module.exports = { register, login };
