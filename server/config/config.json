@@ -12,5 +12,12 @@
     "database": "database_test",
     "host": "127.0.0.1",
     "dialect": "mysql"
+  },
+  "production": {
+    "username": "uuf6ybyh0u48rgfb",
+    "password": "sW6MVnZDCRZNQeVpAwP3",
+    "database": "bjjmlaokgvc9pmvn1crq",
+    "host": "bjjmlaokgvc9pmvn1crq-mysql.services.clever-cloud.com",
+    "dialect": "mysql"
   }
 }

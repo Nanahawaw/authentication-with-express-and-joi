@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 
 // Get the MySQL connection URI from the environment variable
-const databaseUri = process.env.MYSQL_ADDON_URI;
+const databaseUri = process.env.DATABASE_URL;
 
 // Create the Sequelize instance using the connection URI
 const sequelize = new Sequelize(databaseUri, {
