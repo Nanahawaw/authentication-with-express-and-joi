@@ -14,17 +14,11 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
 
-// Get the MySQL connection URI from the environment variable
-const databaseUri = process.env.DATABASE_URL;
-
-// Create the Sequelize instance using the connection URI
-const sequelize = new Sequelize(databaseUri, {
-  dialect: "mysql",
-  // other options...
+db.sequelize.sync().then(() => {
+  app.listen(3000, () => {
+    console.log("Server is running on port 3000");
+  });
 });
-
-db.sequelize = sequelize;
-
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+app.listen(3001, () => {
+  console.log("Server is running on port 3001");
 });
